@@ -1,13 +1,32 @@
 ---@class $className : $superClassName
 $classFieldAnnotation
-local $className = class("$className");
+$childClassConstructors
+local $className = class();
 
 $className.URL = $urlValue;
 
-function $className:CreateInstance()
-    self.__ui = $namespaceUIPackage.CreateObject("$uiPackageName","$uiResName");
-    self:OnConstruct();
-    return self.__ui;
+function $className.CreateInstance()
+    local inst = $className()
+    inst:OnConstruct()
+    return inst
+end
+
+function $className.CreateFromInst(comp)
+    local inst = $className(comp)
+    inst:OnConstruct()
+    return inst
+end
+
+function $className:ctor(comp)
+    if nil == comp then
+        self.__ui = $namespaceUIPackage.CreateObject("$uiPackageName","$uiResName");
+    else
+        self.__ui = comp
+    end
+end
+
+function $className:GetGComponent()
+    return self.__ui
 end
 
 function $className:OnConstruct()

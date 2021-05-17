@@ -183,6 +183,24 @@ function genCode(handler)
 
         _classTemplateTxt = string.gsub(_classTemplateTxt, "$classFieldAnnotation", _classFieldAnnotation);
 
+        local _childClassConstructors = "---@sub item class constructor\n"
+        for j = 0, memberCnt - 1 do
+            if (j > 0) then
+                _childClassConstructors = _childClassConstructors .. "\n";
+            end
+            local memberInfo = members[j]
+            if string.find(memberInfo.type, "UI_") then
+                _childClassConstructors = _childClassConstructors .. string.format('local class_%s\n', memberInfo.type)
+                _childClassConstructors = _childClassConstructors .. string.format('if %s then\n', memberInfo.type)
+                _childClassConstructors = _childClassConstructors .. string.format('    class_%s = %s\n', memberInfo.type, memberInfo.type)
+                _childClassConstructors = _childClassConstructors .. string.format('else\n')
+                _childClassConstructors = _childClassConstructors .. string.format('    class_%s = require("%s%s.%s")\n', memberInfo.type, lua_path_root, codePkgName, memberInfo.type)
+                _childClassConstructors = _childClassConstructors .. "end"
+            end
+        end
+
+        _classTemplateTxt = string.gsub(_classTemplateTxt, "$childClassConstructors", _childClassConstructors);
+
         local _urlValue = string.format('"ui://%s%s"', handler.pkg.id, classInfo.classId)
         _classTemplateTxt = string.gsub(_classTemplateTxt, "$urlValue", _urlValue);
 
@@ -197,10 +215,16 @@ function genCode(handler)
             end
             _classFieldInstatiation = _classFieldInstatiation .. "\t";
             if memberInfo.group == 0 then
+                local getChildString = ""
                 if getMemberByName then
-                    _classFieldInstatiation = _classFieldInstatiation .. string.format('self.%s = self.__ui:GetChild("%s");', memberInfo.varName, memberInfo.name);
+                    getChildString = string.format('GetChild("%s")',  memberInfo.name)
                 else
-                    _classFieldInstatiation = _classFieldInstatiation .. string.format('self.%s = self.__ui:GetChildAt("%s");', memberInfo.varName, memberInfo.index);
+                    getChildString = string.format('GetChildAt("%s")',  memberInfo.index)
+                end
+                if string.find(memberInfo.type, "UI_") then
+                    _classFieldInstatiation = _classFieldInstatiation .. string.format('self.%s = class_%s.CreateFromInst(self.__ui:%s);', memberInfo.varName, memberInfo.type, getChildString);
+                else
+                    _classFieldInstatiation = _classFieldInstatiation .. string.format('self.%s = self.__ui:%s;', memberInfo.varName, getChildString);
                 end
             elseif memberInfo.group == 1 then
                 if getMemberByName then
@@ -238,7 +262,7 @@ function genCode(handler)
             _requireStatement = _requireStatement .. "\n";
         end
         local classInfo = classes[i]
-        _requireStatement = _requireStatement .. string.format('%s = require("%s%s.%s");', classInfo.className, lua_path_root, codePkgName, classInfo.className);
+        _requireStatement = _requireStatement .. string.format('_G.%s = require("%s%s.%s");', classInfo.className, lua_path_root, codePkgName, classInfo.className);
     end
 
     binderTemplateTxt = string.gsub(binderTemplateTxt, "$requireStatement", _requireStatement);
