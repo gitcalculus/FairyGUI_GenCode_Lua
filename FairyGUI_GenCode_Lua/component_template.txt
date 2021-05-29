@@ -17,6 +17,13 @@ function $className.CreateFromInst(comp)
     return inst
 end
 
+function $className.CreateFromPool(pool)
+    local gObj = pool:GetObject("ui://$uiPackageName/$uiResName")
+    local inst = $className(gObj)
+    inst:OnConstruct()
+    return inst
+end
+
 function $className:ctor(comp)
     if nil == comp then
         self.__ui = $namespaceUIPackage.CreateObject("$uiPackageName","$uiResName");
@@ -27,6 +34,23 @@ end
 
 function $className:GetGComponent()
     return self.__ui
+end
+
+function $className:SetVisible(visible)
+    self.__ui.visible = visible
+end
+
+function $className:IsVisible()
+    return self.__ui.visible
+end
+
+function $className:GetGameObject()
+    return self.__ui.displayObject.gameObject
+end
+
+function $className:AddComponent(compType)
+    local comp = self.__ui.displayObject.gameObject:AddComponent(compType)
+    return comp
 end
 
 function $className:OnConstruct()

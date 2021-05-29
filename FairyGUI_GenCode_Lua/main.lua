@@ -184,12 +184,14 @@ function genCode(handler)
         _classTemplateTxt = string.gsub(_classTemplateTxt, "$classFieldAnnotation", _classFieldAnnotation);
 
         local _childClassConstructors = "---@sub item class constructor\n"
+        local findCustomUI = false
         for j = 0, memberCnt - 1 do
             if (j > 0) then
                 _childClassConstructors = _childClassConstructors .. "\n";
             end
             local memberInfo = members[j]
             if string.find(memberInfo.type, "UI_") then
+                findCustomUI = true
                 _childClassConstructors = _childClassConstructors .. string.format('local class_%s\n', memberInfo.type)
                 _childClassConstructors = _childClassConstructors .. string.format('if %s then\n', memberInfo.type)
                 _childClassConstructors = _childClassConstructors .. string.format('    class_%s = %s\n', memberInfo.type, memberInfo.type)
@@ -198,7 +200,9 @@ function genCode(handler)
                 _childClassConstructors = _childClassConstructors .. "end"
             end
         end
-
+        if not findCustomUI then
+            _childClassConstructors = ""
+        end
         _classTemplateTxt = string.gsub(_classTemplateTxt, "$childClassConstructors", _childClassConstructors);
 
         local _urlValue = string.format('"ui://%s%s"', handler.pkg.id, classInfo.classId)
